@@ -1,0 +1,9 @@
+types:
+    - byte strings: <length in base ten ascii>:<string data>
+    - integers: i<integer in base ten ascii>e // note can include "-"
+    - lists: l<bencoded values, can be recursive>e
+        - for example l4:spam3:egge
+        - le is the empty list
+    - dictionaries: d<bencoded string><bencoded element>e
+        - keys must be strings and appear in sorted order, compared with binary and not "natural" comparison
+        - example: d3:cow3:moo4:spam4:eggse represents the dictionary { "cow" => "moo", "spam" => "eggs" } 
