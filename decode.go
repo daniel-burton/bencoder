@@ -9,18 +9,8 @@ import (
 )
 
 func main() {
-	// test the Int decoder
-	//test := []string{"hi", "64", "ihelloe", "i32e", "i64e"}
-	test := "i100ei200eihulloei64e"
+	test := "i100ei200e6:ihulloei64e4:13:"
 	Parse(test)
-	// for _, v := range test {
-	// 	decode, err := DecodeInt(v)
-	// 	if err != nil {
-	// 		fmt.Printf("error: %v\n", err)
-	// 		continue
-	// 	}
-	// 	fmt.Printf("%T: %v\n", decode, decode)
-	//}
 }
 
 func Parse(s string) { //what should the return type be?
@@ -29,29 +19,35 @@ func Parse(s string) { //what should the return type be?
 	var b strings.Builder
 	var inString bool
 	var inInt bool
-	//var inLen bool
-	//var sLen int
+	var inLen bool
+	// var sLen int
 
 	for {
 		c, _, err := r.ReadRune()
+		fmt.Printf("\t%q\n", c)
 		if err != nil {
-			fmt.Printf("Reader error: %v", err)
+			//fmt.Printf("Reader error: %v\n", err)
 			break
 		}
 
-		if inString == false && inInt == false { //if totally outside
+		if inString == false && inInt == false && inLen == false { //if totally outside
 			if unicode.IsDigit(c) { //if first rune is a number, its a string length
-				inString = true
-				//sLen = int(c)
+				inLen = true
+				fmt.Print("now in len\n")
+				if _, err := b.WriteRune(c); err != nil { //write rune to builder
+					fmt.Printf("Writer error: %v", err)
+				}
 			} else if c == 'i' {
 				inInt = true
+				fmt.Print("now in Int\n")
 				continue
 			}
 		} else if inInt == true {
 			if c == 'e' {
 				inInt = false
-				i, err := DecodeInt(b.String())
+				i, err := strconv.Atoi(b.String())
 				if err != nil {
+					fmt.Sprintf("error decoding %q as int", s)
 					fmt.Printf("error: %v\n", err)
 					b.Reset()
 					continue
@@ -63,9 +59,25 @@ func Parse(s string) { //what should the return type be?
 					fmt.Printf("Writer error: %v", err)
 				}
 			}
-		} //else if inString == true {
+		} else if inLen == true {
+			if c == ':' {
+				inLen = false
+				// sLen, err = strconv.Atoi(b.String())
+				// if err != nil {
+				// 	fmt.Sprintf("error decoding %q as int", s)
+				// 	fmt.Printf("error: %v\n", err)
+				// }
+				fmt.Printf("string length, %q\n", b.String())
+				// inString = true
+				b.Reset()
+				continue
+			} else {
+				if _, err := b.WriteRune(c); err != nil {
+					fmt.Printf("Writer error: %v", err)
+				}
+			}
+		}
 
-		//}
 	}
 }
 
