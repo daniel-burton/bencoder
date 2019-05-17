@@ -9,37 +9,39 @@ import (
 )
 
 func main() {
-	test := "i100ei200e6:ihulloei64e4:13:"
+	test := "i100ei200e6:aaaaaaimistakei64e4:abcd13:abcdefghijklm"
 	Parse(test)
 }
 
-func Parse(s string) { //what should the return type be?
+func Parse(s string) { // return type will be []interface{}
 	//
 	var r *strings.Reader = strings.NewReader(s)
 	var b strings.Builder
 	var inString bool
 	var inInt bool
 	var inLen bool
-	// var sLen int
+	// var listLevel int
+	// var dictLevel int
+	var sLen int
 
 	for {
 		c, _, err := r.ReadRune()
-		fmt.Printf("\t%q\n", c)
+		fmt.Printf("%q\n", c)
 		if err != nil {
-			//fmt.Printf("Reader error: %v\n", err)
+			fmt.Printf("Reader error: %v\n", err)
 			break
 		}
 
 		if inString == false && inInt == false && inLen == false { //if totally outside
 			if unicode.IsDigit(c) { //if first rune is a number, its a string length
 				inLen = true
-				fmt.Print("now in len\n")
+				fmt.Print("\tnow in len\n")
 				if _, err := b.WriteRune(c); err != nil { //write rune to builder
 					fmt.Printf("Writer error: %v", err)
 				}
 			} else if c == 'i' {
 				inInt = true
-				fmt.Print("now in Int\n")
+				fmt.Print("\tnow in Int\n")
 				continue
 			}
 		} else if inInt == true {
@@ -47,12 +49,12 @@ func Parse(s string) { //what should the return type be?
 				inInt = false
 				i, err := strconv.Atoi(b.String())
 				if err != nil {
-					fmt.Sprintf("error decoding %q as int", s)
-					fmt.Printf("error: %v\n", err)
+					e := fmt.Sprintf("error decoding %q as int", b.String())
+					fmt.Printf("%v\terror: %v\n", e, err)
 					b.Reset()
 					continue
 				}
-				fmt.Printf("int: %v\n", i)
+				fmt.Printf("--------------------int: %v\n", i)
 				b.Reset()
 			} else {
 				if _, err := b.WriteRune(c); err != nil { //write rune to builder
@@ -62,13 +64,13 @@ func Parse(s string) { //what should the return type be?
 		} else if inLen == true {
 			if c == ':' {
 				inLen = false
-				// sLen, err = strconv.Atoi(b.String())
-				// if err != nil {
-				// 	fmt.Sprintf("error decoding %q as int", s)
-				// 	fmt.Printf("error: %v\n", err)
-				// }
-				fmt.Printf("string length, %q\n", b.String())
-				// inString = true
+				sLen, err = strconv.Atoi(b.String())
+				if err != nil {
+					e := fmt.Sprintf("error decoding %q as int", b.String())
+					fmt.Printf("%v\terror: %v\n", e, err)
+				}
+				inString = true
+				fmt.Println("\tNow in string")
 				b.Reset()
 				continue
 			} else {
@@ -76,8 +78,17 @@ func Parse(s string) { //what should the return type be?
 					fmt.Printf("Writer error: %v", err)
 				}
 			}
+		} else if inString == true {
+			if _, err := b.WriteRune(c); err != nil {
+				fmt.Printf("Writer error: %v", err)
+			}
+			sLen -= 1
+			if sLen == 0 {
+				fmt.Printf("--------------------string: %v\n", b.String())
+				inString = false
+				b.Reset()
+			}
 		}
-
 	}
 }
 
@@ -90,11 +101,6 @@ func DecodeDict(s string) /*(o string, err error)*/ {
 }
 
 func DecodeInt(s string) (i int, err error) {
-	// integers: i<integer in base ten ascii>e // note can include "-"
-	// if s[0] != 'i' || s[len(s)-1] != 'e' {
-	// 	err := errors.New(fmt.Sprintf("not a bencoded integer (must start with 'i' and end with 'e'): %q", s))
-	// 	return 0, err
-	// }
 	i, err = strconv.Atoi(s)
 	if err != nil {
 		err = errors.New(fmt.Sprintf("error decoding %q as int", s))
